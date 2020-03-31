@@ -1,0 +1,356 @@
+# Créé par laroui marouan, le 11/12/2017 en Python 3.2
+
+#On importe plusieurs bibliotheques
+import pygame
+import random
+
+pygame.init() # initialisation du module "pygame"
+
+fenetre = pygame.display.set_mode( (600,600) ) # CrÃ©ation d'une fenÃªtre graphique de taille 600x600 pixels
+pygame.display.set_caption("Marouan Laroui TO2") # DÃ©finit le titre de la fenÃªtre
+
+
+# Chargement des images:
+#    On dÃ©finit et affecte les variables qui contiendront les images du vaisseau ou de l'alien
+imageAlien = pygame.image.load("alien.png")
+imageVaisseau = pygame.image.load("vaisseau.png")
+imageVaisseau = pygame.transform.scale(imageVaisseau, (64, 64)) # On redimensionne l'image du vaisseau Ã  une taille de 64x64 pixels
+imageMunition = pygame.image.load("caisse m.png")
+imageMedic = pygame.image.load("vies.png")
+imageChargeur =  pygame.image.load("munition.jpg")
+# On dÃ©finit les variables qui contiendront les positions des diffÃ©rents Ã©lÃ©ments (vaisseau, alien, projectile)
+# Chaque position est un couple de valeur '(x,y)'
+positionVaisseau = (300,525)
+nbEnnemiElimine = 0
+boss=(75,50,1)
+listeEnnemi = [(0,50,1),(50,50,1),(100,50,1),(150,50,1),(200,50,1)]
+vague2= [(0,0,1),(50,0,1),(100,0,1),(150,0,1),(200,0,1)]
+vieEnnemi = [5,5,5,5,5]
+projectile = [(-1,-1)]
+ProjectileNb = 0
+nVague = 0
+DirectionEnnemi = 1  #On définie la commande qui permet de savoir si l'ennemi se dirige a gauche (0) ou à droite (1)
+listeEtoiles = []
+etoiles =110
+xetoile = []
+yetoile = []
+score = 0
+projectiledispo = 100
+etoiles =110
+vie=3
+projectileEnnemis = []
+caisse=(random.randint(0,568),-25)
+boxemystere= random.randint(1,2) #Determine la nature de la caisse a la destrcution 1= Vies   2=Munnitions
+santé=(-100,-100)
+chargeur=(-100,-100)
+Tempsspawnvague = 200
+#SON DU JEUX
+sonlaser = pygame.mixer.Sound("Laser.wav")
+sonExplosion = pygame.mixer.Sound("Explosion.wav")
+# Fonction en charge de dessiner tous les Ã©lÃ©ments sur notre fenÃªtre graphique.
+# Cette fonction sera appelÃ©e depuis notre boucle infinie
+
+def genererEtoiles():
+    for x in range (etoiles):
+     xetoile.append(random.randint(0,600))
+     yetoile.append(random.randint(0,600))
+     pygame.draw.circle(fenetre, (255,255,255), (xetoile[x],yetoile[x]), 2)
+
+
+
+def vague1():
+    global fenetre, imageAlien, listeEnnemi, vague2, nVague, positionEnnemi,positionEnnemi2
+    for i in range(0,len(listeEnnemi)):
+           positionEnnemi = (listeEnnemi[i][0],listeEnnemi[i][1])
+           fenetre.blit(imageAlien, positionEnnemi)
+
+def dessinerEnnemis():
+    global fenetre, imageAlien, listeEnnemi, vague2, nVague, positionEnnemi,positionEnnemi2,Tempsspawnvague
+    for i in range(0,len(listeEnnemi)):
+           positionEnnemi = (listeEnnemi[i][0],listeEnnemi[i][1])
+           fenetre.blit(imageAlien, positionEnnemi)
+           if Tempsspawnvague <0:
+            vague1()
+            Tempsspawnvague = 200
+
+
+
+
+def dessiner():
+    global imageVaisseau, fenetre
+    # On remplit complÃ¨tement notre fenÃªtre avec la couleur noire: (0,0,0)
+    # Ceci permet de 'nettoyer' notre fenÃªtre avant de la dessiner
+    fenetre.fill( (0,0,0) )
+    fenetre.blit(imageVaisseau, positionVaisseau)# On dessine l'image du vaisseau Ã  sa position
+    fenetre.blit(imageMunition, caisse) # On dessine l'image de la caisse Ã  sa position
+    fenetre.blit(imageMedic, santé)   # On dessine l'image du loot Ã  sa position
+    fenetre.blit(imageChargeur, chargeur)
+
+def dessinerboite():
+    global imageMunition, fenetre
+     # On dessine l'image du vaisseau Ã  sa position
+  # On dessine l'image du vaisseau Ã  sa position
+
+
+def dessinerProjectile(projectilePosition):
+        if projectile[projectilePosition] != (-1, -1):
+            pygame.draw.circle(fenetre, (255,255,255), projectile[projectilePosition], 5)
+
+def dessinerProjectileEnnemis(projectilePosition):
+        if projectileEnnemis[projectilePosition] != (-1, -1):
+            pygame.draw.circle(fenetre, (255,255,0), projectileEnnemis[projectilePosition], 5)
+
+
+# Fonction en charge de gÃ©rer les Ã©vÃ¨nements clavier (ou souris)
+# Cette fonction sera appelÃ©e depuis notre boucle infinie
+def gererClavierEtSouris():
+    global continuer, positionVaisseau, projectile, ProjectileNb, projectiledispo, sonlaser
+
+    press = pygame.key.get_pressed()
+
+    #Gestion clavier deplacement vaisseau
+    if press[pygame.K_RIGHT]:
+        positionVaisseau = ( positionVaisseau[0] + 5 , positionVaisseau[1] )
+        if positionVaisseau > (536,536) :#Si les coordonnées du vaisseau dépassent les limites ²1elles deviennent égale à 536 ce qui l'empêche de sortir de l'ecran de 600x600
+            positionVaisseau = (536,525)
+    elif press[pygame.K_LEFT]:
+        positionVaisseau = ( positionVaisseau[0] - 5, positionVaisseau[1] )
+        if positionVaisseau < (0,600) :  #Si les coordonnées du vaisseau dépassent les limites elles deviennent égale à 0 ce qui l'empêche de sortir de l'ecran de 600x600
+            positionVaisseau = (0,525)
+
+    #Gestion clavier projectiles
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            continuer = 0
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                 projectile[ProjectileNb] = (positionVaisseau[0] + 32,positionVaisseau[1])
+                 if(projectiledispo > 0):
+                     sonlaser.play()
+                     projectile.append((-1,-1))
+                     ProjectileNb += 1
+
+
+
+
+
+# On crÃ©e une nouvelle horloge qui nous permettra de fixer la vitesse de rafraichissement de notre fenÃªtre
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("arial", 27)
+genererEtoiles()
+
+tempsTirEnnemis =100
+tempsTirEnnemis = 100
+tempscaisse= random.randint(0,1500) #On défini la fréquence des tirs
+# La boucle infinie de pygame:
+# On va continuellement dessiner sur la fenÃªtre, gÃ©rer les Ã©vÃ¨nements et calculer certains dÃ©placements
+continuer = 1
+projectileEnnemis.append((100,10))
+while continuer==1:
+    # pygame permet de fixer la vitesse de notre boucle:
+    # ici on dÃ©clare 50 tours par secondes soit une animation Ã  50 images par secondes
+    clock.tick(60)
+    dessinerboite()
+    dessiner()
+    gererClavierEtSouris()
+    white = (255,255,255)
+    dessinerEnnemis()
+    genererEtoiles()
+    Tempsspawnvague -= 1
+    tempsTirEnnemis -= 1
+    tempscaisse -=1
+
+    # render text
+    scoretext = font.render("Score : " + str(score), 1, white)
+    nbprojectile = font.render("Projectiles :"+ str(projectiledispo), 1, white)
+    vietexte = font.render("Vie restantes: :"+ str(vie), 1, white)
+    fenetre.blit(nbprojectile, (450,0))
+    fenetre.blit(scoretext, (0, 0))
+    fenetre.blit(vietexte, (250,0))
+ #S'il ne reste plus aucun Alien, la partie est gagné un message s'affiche
+
+    if(len(listeEnnemi) == 0):
+        scoretext = font.render("Vous avez gagné !Recommencer ?", 1, white)
+        fenetre.blit(scoretext, (100, 250))
+
+    #Si l'alien rentre en colision avec le vaisseau la partie est perdue !
+
+   # Test perdre en fonction du nb d'ennemi
+    for i in range(0,len(listeEnnemi)):
+##        if(len(listeEnnemi) >= vie):
+##            if(listeEnnemi[i][1] > 500) :
+##                positionVaisseau=(-100,-100)
+##                for x in range (1):
+##                 sonExplosion.play()
+##                scoretext = font.render("Perdu ! Recommencer ?", 1, white)
+##                fenetre.blit(scoretext, (250, 200))
+
+        if vie==0:
+                sonExplosion.play()
+                scoretext = font.render("Perdu ! Recommencer ?", 1, white)
+                fenetre.blit(scoretext, (250, 200))
+                positionVaisseau=(-100,-100)
+
+
+
+    #Boite mystère:
+        if tempscaisse<=0:
+         caisse=(caisse[0],caisse[1]+1)
+         santé=(santé[0],santé[1]+1)
+         chargeur=(chargeur[0],chargeur[1]+1)
+
+
+
+
+
+
+
+    #Deplacement des ennemis
+        if(DirectionEnnemi == 0 and listeEnnemi[i][0] >= 0):
+            listeEnnemi[i] = (listeEnnemi[i][0] - 5, listeEnnemi[i][1])
+
+
+        elif(DirectionEnnemi == 1 and listeEnnemi[i][0] <= 570):
+            listeEnnemi[i] = (listeEnnemi[i][0] + 5, listeEnnemi[i][1])
+
+
+        elif(listeEnnemi[i][0] < 0):
+            DirectionEnnemi = 1             #L'ennemi se deplacera vers la droite
+
+            for i in range(0,len(listeEnnemi)):
+                listeEnnemi[i] = (listeEnnemi[i][0], listeEnnemi[i][1] + 20) #Il se rapprochera du vaisseau
+            listeEnnemi[i] = (listeEnnemi[i][0] + 5, listeEnnemi[i][1])
+        elif(listeEnnemi[i][0] > 570):
+            DirectionEnnemi = 0   #L'ennemi se deplacera vers la gauche
+            for i in range(0,len(listeEnnemi)):
+                listeEnnemi[i] = (listeEnnemi[i][0], listeEnnemi[i][1] + 20) #Il se rapprochera du vaisseau
+            listeEnnemi[i] = (listeEnnemi[i][0] - 10, listeEnnemi[i][1])
+#Si l'Alien se rapproche trop la partie est perdue
+        if(listeEnnemi[i][1] > 500)  :
+            if (len(listeEnnemi) < vie):
+                vie=vie- len(listeEnnemi)
+                listeEnnemi[:] = []
+                sonExplosion.play()
+            else:
+                vie=0
+                sonExplosion.play()
+                scoretext = font.render("Perdu ! Recommencer ?", 1, white)
+                fenetre.blit(scoretext, (250, 200))
+                positionVaisseau=(-100,-100)
+
+
+    # On fait avancer le projectile (si il existe)
+    for i in range(0,ProjectileNb):
+        dessinerProjectile(i)
+        if projectile[i] != (-1, -1):
+
+            projectile[i] = (projectile[i][0], projectile[i][1] -5)
+
+            #Ligne comptabilise le nombre de projectile utilise
+            if projectile[i] == (projectile[i][0],500) :
+                projectiledispo = projectiledispo - 1
+
+            #Lorsque le nombre de projectile est inferieur à 0
+            if projectiledispo <= 0 :
+                projectiledispo = 0
+            #Lorsque l'alien touche le vaisseau
+
+
+            #Lorsque le projectile touche l'ennemi
+            for j in range(0,len(listeEnnemi)):
+                if projectile[i][0] <= listeEnnemi[j-nbEnnemiElimine][0] + 33 and projectile[i][0] >= listeEnnemi[j-nbEnnemiElimine][0]:
+                        if projectile[i][1] <= listeEnnemi[j-nbEnnemiElimine][1] + 27 and projectile[i][1]  >= listeEnnemi[j-nbEnnemiElimine][1] :
+                            score = score + 1
+                            projectile.pop(i)
+                            ProjectileNb -= 1
+                            vieEnnemi[j] -= 1
+                            if vieEnnemi[j] <= 0 :
+                                sonExplosion.play()
+                                listeEnnemi.pop(j)
+                                nbEnnemiElimine += 1
+#Hitbox boite mystère
+                if projectile[i][0] <= caisse[0] + 27 and projectile[i][0] >= caisse[0]:
+                     if projectile[i][1] <= caisse[1] + 27 and projectile[i][1]  >= caisse[1]  :
+                        sonExplosion.play()
+                        if boxemystere==1:
+                            santé=(caisse[0],caisse[0])
+                        if boxemystere==2:
+                            chargeur=(caisse[0],caisse[0])
+                        caisse=(caisse[0],caisse[1]+600)
+
+                        #Drop en fonction du genre de la caisse aléatoire
+
+
+
+
+
+            nbEnnemiElimine = 0
+            #Lorsque le projectile a quitte l'ecran
+            if projectile[i][1] -5 == 0 :
+                projectile.pop(i)
+                ProjectileNb -= 1
+
+
+
+    #Tir Ennemis
+    if tempsTirEnnemis <= 0 and len(listeEnnemi) > 0 :
+        tirEnnemis = random.randint(0,len(listeEnnemi)-1)
+        projectileEnnemis.append(listeEnnemi[tirEnnemis])
+        tempsTirEnnemis = 100
+
+
+    for i in range(0,len(projectileEnnemis)):
+        dessinerProjectileEnnemis(i)
+        projectileEnnemis[i] = (projectileEnnemis[i][0], projectileEnnemis[i][1] + 8)
+
+        if projectileEnnemis[i][0] >= positionVaisseau[0] and projectileEnnemis[i][0] <= positionVaisseau[0] + 66 :
+            if projectileEnnemis[i][1] >= positionVaisseau[1] and projectileEnnemis[i][1] <= positionVaisseau[1] + 66 :
+                vie -= 1
+                sonExplosion.play()
+                projectileEnnemis.pop(i)
+
+
+
+               #Si le vaisseau se fait taper par la caisse - 1 vie
+
+        if caisse[0]>= positionVaisseau[0] and caisse[0] <= positionVaisseau[0]+89 :   #64 + 25 car boite de 25x25
+             if caisse[1] >= positionVaisseau[1] and caisse[1] <= positionVaisseau[1] + 84 :
+                vie -= 1
+                sonExplosion.play()
+                caisse=(caisse[0],caisse[1]+600)
+
+             #Si le vaisseau prends un bonus
+        if santé[0]>= positionVaisseau[0] and santé[0] <= positionVaisseau[0]+89 :   #64 + 25 car boite de 25x17
+             if santé[1] >= positionVaisseau[1] and caisse[1] <= positionVaisseau[1] +81 : #64+17
+                vie = 3
+                santé=(santé[0],santé[1]+600)
+
+
+             #Si le vaisseau prends un bonus
+        if chargeur[0]>= positionVaisseau[0] and chargeur[0] <= positionVaisseau[0]+89 :   #64 + 25 car boite de 25x11
+             if chargeur[1] >= positionVaisseau[1] and chargeur[1] <= positionVaisseau[1] +75 :
+                projectiledispo=100
+                chargeur=(chargeur[0],chargeur[1]+600)
+
+
+    for x in range (etoiles):
+        yetoile[x]+=1
+        if yetoile[x] >= 600:              #Si les étoiles sortent de l'ecrans ils re apparaissent en haut de ce dernier
+            yetoile[x]=0
+
+    pygame.display.update()
+
+
+# le projectile "monte" vers le haut de la fenêtre
+
+
+
+
+
+
+
+
+
+
+## A la fin, lorsque l'on sortira de la boucle, on demandera Ã  Pygame de quitter proprement
+pygame.quit()
